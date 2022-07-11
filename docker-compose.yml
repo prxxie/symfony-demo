@@ -1,0 +1,70 @@
+version: '3'
+
+networks:
+  funvid:
+    external:
+      name: mainnet
+
+volumes:
+  mysqldata:
+    name: funvid-db
+
+services:
+  myapp:
+    image: 'bitnami/symfony:6.1'
+    volumes:
+      - './app:/app'
+    restart: always
+    environment:
+      - MYSQL_CLIENT_HOST=mariadb
+      - MYSQL_CLIENT_PORT_NUMBER=3306
+      - MYSQL_CLIENT_USER=admin
+      - MYSQL_CLIENT_PASSWORD=123456
+      - MYSQL_CLIENT_DATABASE=myapp
+      - SYMFONY_DATABASE_PASSWORD=123456
+      - VIRTUAL_HOST=funvid.local
+      - VIRTUAL_PORT=8000
+    networks:
+      - funvid
+    depends_on:
+      - mariadb
+
+  mariadb:
+    image: 'bitnami/mariadb:10.3'
+    networks:
+      - funvid
+    restart: always
+    environment:
+      - MARIADB_ROOT_PASSWORD=123456
+      - MARIADB_USER=admin
+      - MARIADB_PASSWORD=123456
+      - MARIADB_DATABASE=myapp
+    volumes:
+      - "mysqldata:/var/lib/mysql"
+
+  pma:
+    image: phpmyadmin/phpmyadmin
+    networks:
+      - funvid
+    restart: always
+    environment:
+      PMA_HOST: mariadb
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: 123456
+      VIRTUAL_HOST: "pma.funvid.local"
+
+  mailhog:
+    image: mailhog/mailhog
+    networks:
+      - funvid
+    restart: always
+    environment:
+      - VIRTUAL_HOST=mailhog.funvid.local
+      - VIRTUAL_PORT=8025
+
+  redis:
+    image: redis
+    networks:
+      - funvid
+    restart: always
+    
